@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Checkout — Isha Automation</title><link rel="stylesheet" href="styles.css" /></head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="logo-min"><img src="images/isha-logo.jpeg" alt="logo" style="height:48px;border-radius:6px"></div>
+        <div class="brand-text">Isha Automation</div>
+      </div>
+      <div class="header-actions">
+        <a href="cart.html" class="btn ghost">Back to Cart</a>
+        <button id="logoutBtn" class="btn ghost">Logout</button>
+      </div>
+    </div>
+  </header>
+  <main class="container">
+    <h2>Checkout</h2>
+    <div class="checkout-grid">
+      <form id="checkoutForm" class="checkout-form">
+        <label>Full name
+          <input id="fullName" required placeholder="John Doe" />
+        </label>
+        <label>Address
+          <input id="address" required placeholder="123, Some Street" />
+        </label>
+        <label>Card Number
+          <input id="cardNumber" required placeholder="4242 4242 4242 4242" />
+        </label>
+        <label>Expiry (MM/YY)
+          <input id="expiry" required placeholder="12/34" />
+        </label>
+        <label>CVC
+          <input id="cvc" required placeholder="123" />
+        </label>
+        <div style="margin-top:12px;">
+          <button class="btn primary" type="submit">Pay Now</button>
+        </div>
+        <p id="checkoutMsg" class="muted"></p>
+      </form>
+      <div class="order-summary">
+        <h3>Order summary</h3>
+        <div id="summaryList"></div>
+        <div style="margin-top:12px;">
+          <div><strong>Subtotal:</strong> <span id="sumSubtotal">₹0.00</span></div>
+          <div><strong>Tax (5%):</strong> <span id="sumTax">₹0.00</span></div>
+          <div><strong>Total:</strong> <span id="sumTotal">₹0.00</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer"><div class="container">© Isha Automation</div></footer>
+<script>
+  if (sessionStorage.getItem('isLoggedIn') !== 'true') window.location.href='index.html';
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{ sessionStorage.clear(); window.location.href='index.html'; });
+  function loadCart(){ const raw = localStorage.getItem('sp_cart'); return raw?JSON.parse(raw):[]; }
+  function saveOrder(order){ const raw = localStorage.getItem('sp_orders') || '[]'; const arr = JSON.parse(raw); arr.push(order); localStorage.setItem('sp_orders', JSON.stringify(arr)); }
+  function renderSummary(){ const cart = loadCart(); const list = document.getElementById('summaryList'); list.innerHTML = ''; cart.forEach(p=>{ const div = document.createElement('div'); div.className='summary-row'; div.innerHTML = `<div>${p.name} × ${p.qty||1}</div><div>₹${(p.price*(p.qty||1)).toFixed(2)}</div>`; list.appendChild(div); }); const subtotal = cart.reduce((s,p)=> s + p.price * (p.qty||1), 0); const tax = subtotal * 0.05; const total = subtotal + tax; document.getElementById('sumSubtotal').textContent='₹'+subtotal.toFixed(2); document.getElementById('sumTax').textContent='₹'+tax.toFixed(2); document.getElementById('sumTotal').textContent='₹'+total.toFixed(2); }
+  renderSummary();
+  document.getElementById('checkoutForm').addEventListener('submit', (e)=>{ e.preventDefault(); const fullName = document.getElementById('fullName').value.trim(); const address = document.getElementById('address').value.trim(); const card = document.getElementById('cardNumber').value.trim(); if(!fullName||!address||!card){ document.getElementById('checkoutMsg').textContent='Please fill required fields'; return; } document.getElementById('checkoutMsg').textContent = 'Processing payment...'; setTimeout(()=>{ const cart = loadCart(); const subtotal = cart.reduce((s,p)=> s + p.price * (p.qty||1), 0); const tax = subtotal * 0.05; const total = subtotal + tax; const order = { id: 'ORD-' + Date.now().toString(36).toUpperCase(), createdAt: new Date().toISOString(), name: fullName, address, items: cart, subtotal, tax, total }; saveOrder(order); localStorage.removeItem('sp_cart'); window.location.href = 'order.html?orderId=' + encodeURIComponent(order.id); }, 1200); });
+</script>
+</body>
+</html>
